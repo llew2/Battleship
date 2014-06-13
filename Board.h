@@ -48,6 +48,7 @@ class Board
     int aiNextShotsTracker;
     point aiPoint;
     bool getOut;
+	
   public:
 // A constructor creates five randomly placed
 // ships into the ships array of lengths: 5, 4, 3, 3, 2

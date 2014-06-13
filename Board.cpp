@@ -4,21 +4,25 @@
 //
 
 #include "Board.h"
+#include <time.h>
 
 Board::Board() {
     srand(time(NULL));
+// --------------------Variable Definitions--------------------
     hitRegistered = false;
     showOnce = false;
-// Checks to see if a ship just sunk and display it's length based on index - justSunkNum
+// Checks to see if a ship just sunk and display ship length based on index of - justSunkNum
     justSunk = false;
     justSunkNum = -1;
 // Dummy assignment to check if shot was valid (i.e. was not shot at before)
     shotValid = false;
 // Assumes no AI until manually activated
     isAI = false;
+// Counter to next logical AI Shots
     aiNextShotsTracker = 0;
     getOut = false;
 
+// --------------------Border Definitions--------------------
 // Setting up borders for battleship (horizontal then vertical border)
     edge1 = new Ship(point(0,10),HORIZONTAL,10);
     edge2 = new Ship(point(10,0),VERTICAL,10);
@@ -27,11 +31,12 @@ Board::Board() {
 
 // Generating random ships
     for (int i = 0; i < 5; i++) {
+    // Assume we have a ship that can be legally placed on the board
       validShip = true;
       xRand = (int) (rand() % 10);
       yRand = (int) (rand() % 10);
       origin = new point(xRand,yRand);
-// Set the direction of the ship
+    // Set the direction of the ship
       dirRand = (int) (rand() % 2);
       if (dirRand == 0) {
         orientation = HORIZONTAL;
@@ -39,93 +44,135 @@ Board::Board() {
       else {
         orientation = VERTICAL;
       }
-// Set the length of the ship
-// Let's try to shorten this section
+    // Set the length of the ship
       if (i == 0) shipLen = 5;
       if (i == 1) shipLen = 4;
       if (i == 2) shipLen = 3;
       if (i == 3) shipLen = 3;
       if (i == 4) shipLen = 2;
-// Generate the random ship
+    // Generate the random ship
       tempShip = new Ship(*origin, orientation, shipLen);
 
-// Check to see if collisions with edges will occur
+    // Check to see if collisions with edges will occur
       if(tempShip->collidesWith(*edge1) || tempShip->collidesWith(*edge2)) {
           i--;
           validShip = false;
       }
-// Ships will reach negative edge when dealing with ai
+    // Ships will reach negative edge when dealing with ai -- ??
       if(tempShip->collidesWith(*edge3) || tempShip->collidesWith(*edge4)) {
           i--;
           validShip = false;
       }
 
-// Checks collision with each ship
+    // Checks collision with each previously placed ship in ship array
       for(int j = 0; j < i; j++) {
         if (tempShip->collidesWith(*(ships[j]))) {
           j = i;
         }
-// If ships collide, immediately remove it and generate another random ship
+    // If ships collide, immediately remove it and generate another random ship
         if(j == i) {
           i--;
           validShip = false;
         }
       }
-// If this ship is valid, assign it to the pointer ships
+    // If this ship is valid, assign it to the pointer ships
       if(validShip == true){
         ships[i] = tempShip;
       }
     }
   }
 
-
-// Updates state to account for a shot at x, y
-// Returns true if the shot is a hit. False for a miss
+//-------------------- fireShot --------------------
+// Purpose:     Updates state to account for a shot at x, y
+// Post-condition:  Returns true if the shot is a hit. False for a miss
+//                  If the point has already been chosen, reprompt user for another
 bool Board::fireShot(int x, int y) {
-// If the point has already been chosen, reprompt user for another
-// AI's method for generating shot if shot has already been called
-
+	
+//-------------------- AI's hunting fireShot --------------------
+// AI's method for generating shot if shot has already been called -- ?? AI's method for generating next shot
+// STARTING MODIFICATION HERE ----------------------------------------
+/*
     do {
+
       if (aiNextShotsTracker < aiNextShots.getSize()) {
-// If there are good next shots to take, the ai will take them!
+	  //if (aiNextShotsTracker < aiNextShots.getSize()) {
+    //-------------------- AI's Priority Shot Array --------------------
+    // If there are good next shots to take in aiNextShots array, the ai will take them!
         aiPoint = aiNextShots.get(aiNextShotsTracker);
         x = aiPoint.getX();
         y = aiPoint.getY();
-// Increment so we use a different "hunting/good shot" next time.
+    // Increment aiNextShotsTracker to progress through aiNextShots array.
+    // This way we use a different "hunting/good shot" next time.
         aiNextShotsTracker++;
+    // Keeps track of changes added to aiNextShotTracker
         cout << "HERE'S SOME PROOF!!: " << aiNextShotsTracker << "  " << aiNextShots.getSize();
       }
-      if (aiNextShotsTracker >= aiNextShots.getSize())
+	// Attempt to prevent infinite loop -- Will prevent 
+	  if (shots.contains(point(x,y))) {
+		  getOut = false;
+	  }
+    // Allows AI to get out if it runs out of next shots, with the last one being invalid
+      if (aiNextShotsTracker >= aiNextShots.getSize()) {
+        cout << "\n Getting out of hunting fireShot \n";
         getOut = true;
-    } while (shots.contains(point(x,y)) && isAI == true && !(getOut == true));
-// Resets Escape variable
+      }
+	  cout << "\n You are still in the first Priority Loop \n";		// Problem...
+    } while ((isAI == true && !(getOut == true)));
+	// } while ((isAI == true && !(getOut == true)) || aiNextShotsTracker >= aiNextShots.getSize());
+*/
+
+
+// Resets Escape variable -- Allows Escape if AI Has no remaining logical "hunting shots"
     getOut = false;
 
-    while ((shots.contains(point(x,y)) && isAI == true) || x < 0 || x >= 10 || y < 0 || y >= 10) {
+//-------------------- AI's repeated fireShot --------------------
+// Prevents AI from shooting at the same location twice
+    // If the shot has already been taken, or is out of bounds, the AI will attempt to acquire another shot.
+//    while (getOut == false && ((shots.contains(point(x,y)) && isAI == true) || x < 0 || x >= 10 || y < 0 || y >= 10) && aiNextShotsTracker < aiNextShots.getSize()) {
+    while (getOut == false && isAI == true && aiNextShotsTracker < aiNextShots.getSize()) {
       do {
-// If there are good next shots to take, the ai will take them!
+    //-------------------- AI's Priority Shot Array --------------------
+    // If there are good next shots to take in aiNextShots array, the ai will take them!
         if (aiNextShotsTracker < aiNextShots.getSize()) {
           aiPoint = aiNextShots.get(aiNextShotsTracker);
           x = aiPoint.getX();
           y = aiPoint.getY();
-// Increment so we use a different "hunting/good shot" next time.
+    // Increment aiNextShotsTracker to progress through aiNextShots array.
+    // This way we use a different "hunting/good shot" next time.
           aiNextShotsTracker++;
+		  cout << "HERE'S SOME PROOF!!: " << aiNextShotsTracker << "  " << aiNextShots.getSize();
         }
-// Allows AI to get out if it runs out of next shots, with the last one being invalid
-        if (aiNextShotsTracker > aiNextShots.getSize())
+	// Allows AI to get out if the logical point meets required parameters
+		if ((x >= 0 && x < 10 && y >= 0 && y < 10) && !(shots.contains(point(x,y)))) {
+			getOut = true;
+			cout << "/nTrying to get out/n";
+		}
+    // Allows AI to get out if it runs out of next shots, with the last one being invalid
+        if (aiNextShotsTracker >= aiNextShots.getSize()) {
+          cout << "\n AI's repeated fireShot for user being called -- Getting Out \n";
           getOut = true;
-      } while ((x < 0 || x >= 10 || y < 0 || y >= 10) && !(getOut == true));
-
-// If there are no good shots to select from, FIRE AWAY!
-      if ((aiNextShotsTracker + 1) >= aiNextShots.getSize()) {
-        x = (int)(rand() % 10);
-        y = (int)(rand() % 10);
-      }      
+        }
+	// If (not out of bounds AND shots.containspoint is false) OR getOut is true, then we may leave.
+//      } while ((x < 0 || x >= 10 || y < 0 || y >= 10) && shots.contains(point(x,y)) || !(getOut == true));
+	  } while (!(getOut == true));
+	  cout << "Second AI Loop " << "Hello!" << endl;
     }
+
+//-------------------- AI's random fireShot --------------------
+// If there are no good shots to select from, FIRE AWAY!
+	while(isAI == true && shots.contains(point(x,y)) || (x < 0 || x >= 10 || y < 0 || y >= 10)) {
+		cout << "\n AI's random fireShot for user being called \n";
+		x = (int)(rand() % 10);
+		y = (int)(rand() % 10);
+		cout << "\n AI aimed for " << x << ", " << y << endl;
+	}
+	
 // Resets the escape variable so the AI can use it again the next time
     getOut = false;
+	
 // ---------------------------fireShot for user------------------------
     while ((shots.contains(point(x,y))) || (x < 0 || x >= 10 || y < 0 || y >= 10)) {
+      cout << "\n fireShot for user being called \n";
       if(x < 0 || x >=10 || y < 0 || y >=10) {
         cout << "You can't select points outside the board. Pick another!:";
         cin >> x >> y;
@@ -136,7 +183,7 @@ bool Board::fireShot(int x, int y) {
       }
     }
 
-// ---------------------------fireShot for all----------------------------
+// ---------------------------fireShot Check for all----------------------------
     cout << "Checking shot fired\n";
     for (int i = 0; i < 5; i++) {
       if(ships[i]->containsPoint(point(x,y))) {               //Checks if any ship has this point

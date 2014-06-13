@@ -3,6 +3,7 @@
 #include "Ship.h"
 #include "Board.h"
 #include <cstdlib>
+#include <time.h>
 
 using namespace std;
 
@@ -17,9 +18,11 @@ int main() {
 
   cout << "\nWelcome to Battleship\n\n";
 
+// Query AI Player
   cout << "Do you want to play with the AI?(y/n): ";
   cin >> ai;
 
+//-------------------- Without AI --------------------
   if(ai == 'n') {
     cout << "\nWe've set up your ships for you below!\n\n";
     b.display();
@@ -41,18 +44,20 @@ int main() {
 
     }while (runAgain && ai != 'y');
   }
-//----------------------------------AI----------------
-// This is the segment to enable ai
+//-------------------- With AI --------------------
   else {
     b.aiHide();
     cout << "You have chosen to enable AI. Setting up now.\n";
     Board aiPlayer;
+    cout << "\nThis is your board with your ships! \n";
     aiPlayer.display();
-// Supress b's board, diplay aiPlayer display first one, not second
+// Suppress b's board, display aiPlayer display first one, not second
 // Turns on AI
     aiPlayer.aiActivate();
 // Shows where user's ships are placed
+    cout << "\nThis is the AI's Board you will be shooting at! \n";
     b.display();
+    cout << "\nEnter your first shot!\n";
 
     do {
 // Evaluate Victory Conditions
@@ -79,8 +84,8 @@ int main() {
 
 //  Time to generate random ai ships shots
         aiX = int(rand() % 10);
-        aiY = int(rand() % 10); 
-        aiPlayer.fireShot(aiX,aiY); 
+        aiY = int(rand() % 10);
+        aiPlayer.fireShot(aiX,aiY);
 
         cout << "\nThis is your board which the AI is shooting at.\n";
         aiPlayer.display();
